@@ -1,6 +1,111 @@
 <!DOCTYPE html>
 <html>
   <head><meta charset="utf-8"><title>Frame Test</title></head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+<style>
+  /* Default: span 2 columns */
+  [data-span="2"] {
+    grid-column: span 2;
+  }
+
+  /* Mobile Landscape and Portrait: reset to 1 column */
+  @media screen and (max-width: 767px) {
+    [data-span="2"] {
+      grid-column: span 1;
+    }
+  }
+  
+  /* Default (Desktop) — full width and height */
+  #hero-canvas {
+    position: sticky;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    display: block;
+    object-fit: cover; /* desktop: fill the screen */
+  }
+
+  /* Mobile Portrait: shrink and center */
+  @media screen and (max-width: 767px) {
+    #hero-canvas {
+      width: auto;
+      height: 100vh;
+      max-width: 100%;
+      margin: 0 auto;
+      display: block;
+      position: relative;
+      object-fit: contain; /* maintain aspect ratio, no crop */
+    }
+  }
+</style>
+
+
+<script>
+  function initScrollSequence() {
+    const isMobile = window.innerWidth <= 767;
+    const folder = isMobile ? "mobile_frames" : "desktop_frames";
+    const frameCount = 209;
+
+    const canvas = document.getElementById("hero-canvas");
+    const context = canvas.getContext("2d");
+
+    // Set canvas size based on device
+    canvas.width = isMobile ? 1080 : 1920;
+    canvas.height = isMobile ? 1920 : 1080;
+
+    const currentFrame = index =>
+      `https://marrtan.github.io/ddexp/${folder}/frame_${String(index).padStart(4, '0')}.png`;
+
+    const images = [];
+    const imageSeq = { frame: 0 };
+
+    for (let i = 0; i < frameCount; i++) {
+      const img = new Image();
+      img.src = currentFrame(i);
+      images.push(img);
+    }
+
+    images[0].onload = function () {
+      context.drawImage(images[0], 0, 0);
+    };
+
+    gsap.to(imageSeq, {
+      frame: frameCount - 1,
+      snap: "frame",
+      ease: "none",
+      scrollTrigger: {
+        scrub: 1,
+        trigger: ".canvas-wrapper",
+        start: "top top",
+        end: "bottom bottom"
+      },
+      onUpdate: render
+    });
+
+    function render() {
+      const img = images[imageSeq.frame];
+      if (img && img.complete) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(img, 0, 0, canvas.width, canvas.height);
+      }
+    }
+  }
+
+  // First run
+  initScrollSequence();
+
+  // Optional: Listen for resize and reload only if crossing breakpoints
+  let wasMobile = window.innerWidth <= 767;
+  window.addEventListener('resize', () => {
+    const isNowMobile = window.innerWidth <= 767;
+    if (wasMobile !== isNowMobile) {
+      location.reload(); // easiest option: reload page to re-init with correct folder
+    }
+  });
+</script>
+
   <body>
     <h1>Hello from ddexp GitHub Pages!</h1>
     <img src="frames/frame_0000.png" width="600">
